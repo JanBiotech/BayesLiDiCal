@@ -1,0 +1,145 @@
+\documentclass[fleqn,11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{sectsty}
+\usepackage{amsbsy}
+\usepackage{fancyhdr}
+\usepackage{color}
+\usepackage{url}
+\usepackage[indention=2em,labelsep=period,labelfont=bf]{caption}
+\usepackage[normalsize,nooneline,sf,bf,FIGTOPCAP,tight]{subfigure}
+\usepackage[noae]{Sweave} % noae required to sanitize single quotes
+\usepackage{fancyvrb}
+
+\textwidth = 6.5 in
+\textheight = 8.5 in
+\oddsidemargin = 0.0 in
+\evensidemargin = 0.0 in
+\topmargin = 0.0 in
+\headheight = 15 pt
+\headsep = 0.1 in
+\parskip = 0.0 in
+\parindent = 4 ex
+
+\definecolor{grey}{rgb}{0.4,0.4,0.4}
+
+\newcommand{\bcdot}{\boldsymbol{\cdot}}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{tabsize=4}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{tabsize=4}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{tabsize=4,formatcom=\color{grey},fontsize=\small}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Page \thepage}
+\lhead{QVOA simulations}
+\chead{Tony Greenberg}
+
+\title{Plotting the results of QVOA experiment simulations}
+\author{Tony Greenberg}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+<<echo=false>>=
+options(width=90)
+library(data.table)
+library(ggplot2)
+library(showtext)
+library(compiler)
+font_add("myriad", regular="MYRIADPRO-SEMIBOLD.OTF",
+	bold="MYRIADPRO-BOLD.OTF", italic="MYRIADPRO-SEMIBOLDIT.OTF")
+sessionInfo()
+@
+In this document I plot the results of simulating QVOA experiments. The code to run the simulations is in the \verb|dilutionSimRun.R| script file. The experiments are involve taking samples from a vial with 1 million resting CD4$^+$ T cells per milliliter. The number of cells is precisely counted. The total volume in the initial vial (labeled ``tube A'') varies from experiment to experiment, depending on the purification success from the blood sample. A 550 $\mu$l aliquot from tube A is taken and diluted with 2.2 ml of media (tube B). The same volume is taken from tube B and again diluted with 2.2 ml of medium (tube C). One milliliter samples are taken from each kind of tube (12 from A and two from B and C) and tested. The test results are binary (positive if at least one cell in the sample is replication competent). To the best of our knowledge, the dilution samples are taken before the test samples. However, we simulate both scenarios to see if the order has any impact on results.
+
+The model underlying estimation of positive cell counts in the original sample assumes that each sampling and dilution step takes exactly 1 million (for testing) or 200 000 (for dilution) cells. Howver, since only the volume is precisely measured after the establishment of the initial cell suspension, some sampling error is introduced. I simulate this with the binomial distribution. I run three kinds of simulations: no error (assuming accurate cell counts), dilution samples taken first, and testing samples taken first (the latter two with sampling error). I vary the total number of cells in tube A and the number of positive cells per million (IUPM). The values represent the range found in published experiments and that appear in the samples measured for the current project.
+
+I read the files, making one big \verb|data.table| with all the results, properly indexed.
+<<>>=
+simData <- NULL
+for (simKind in c("ne", "sf", "df")){
+	for (iupm in c("02", "2", "10", "20", "50")){
+		for (tot in c("17", "35", "75")){
+			fileNam <- paste(simKind, "Sim", tot, "_", iupm, ".tsv", sep="")
+			tmp     <- fread(fileNam)
+			iuCp    <- iupm
+			if(iuCp == "02") {iuCp <- "0.2"}
+			sim     <- simKind
+			if(sim == "ne") {sim <- "no error"}
+			if(sim == "sf") {sim <- "sample first"}
+			if(sim == "df") {sim <- "dilute first"}
+			tmp <- tmp[, .(count=sum(hits)), by=.(wellType, simulation)]
+			tmp[, IUPM := rep(iuCp, nrow(tmp))]
+			tmp[, volume := rep(tot, nrow(tmp))]
+			tmp[, simulation := rep(sim, nrow(tmp))]
+			simData <- rbind(simData, tmp)
+		}
+	}
+}
+simData[, simulation := factor(simulation,
+							levels=c("no error", "sample first", "dilute first"))]
+simData[, IUPM := factor(IUPM, levels=c("0.2", "2", "10", "20", "50"))]
+@
+Plot the various IUPM and simulation kinds for each IUPM. The columns are the counts in each well type and the rows show each total volume (or cell count in millions) in the initial sample.
+\begin{center}
+<<results=tex>>=
+plotFileName <- "positiveWellHist02.pdf"
+showtext_auto()
+ggplot(data=simData[IUPM=="0.2",], aes(x=count, ..density.., fill=simulation)) +
+	geom_histogram(bins=14, position="dodge") +
+	facet_grid(volume~wellType) +
+	theme_classic(base_size=18, base_family="myriad") +
+	theme(strip.background=element_rect(fill="grey95", linetype="blank")) +
+	labs(x="positive well count", title="IUPM = 0.2")
+ggsave(plotFileName, width=8, height=8, units="in", device="pdf")
+cat("\\includegraphics{", plotFileName, "}\n\n", sep="")
+plotFileName <- "positiveWellHist2.pdf"
+showtext_auto()
+ggplot(data=simData[IUPM=="2",], aes(x=count, ..density.., fill=simulation)) +
+	geom_histogram(bins=14, position="dodge") +
+	facet_grid(volume~wellType) +
+	theme_classic(base_size=18, base_family="myriad") +
+	theme(strip.background=element_rect(fill="grey95", linetype="blank")) +
+	labs(x="positive well count", title="IUPM = 2")
+ggsave(plotFileName, width=8, height=8, units="in", device="pdf")
+cat("\\includegraphics{", plotFileName, "}\n\n", sep="")
+plotFileName <- "positiveWellHist10.pdf"
+showtext_auto()
+ggplot(data=simData[IUPM=="10",], aes(x=count, ..density.., fill=simulation)) +
+	geom_histogram(bins=14, position="dodge") +
+	facet_grid(volume~wellType) +
+	theme_classic(base_size=18, base_family="myriad") +
+	theme(strip.background=element_rect(fill="grey95", linetype="blank")) +
+	labs(x="positive well count", title="IUPM = 10")
+ggsave(plotFileName, width=8, height=8, units="in", device="pdf")
+cat("\\includegraphics{", plotFileName, "}\n\n", sep="")
+plotFileName <- "positiveWellHist20.pdf"
+showtext_auto()
+ggplot(data=simData[IUPM=="20",], aes(x=count, ..density.., fill=simulation)) +
+	geom_histogram(bins=14, position="dodge") +
+	facet_grid(volume~wellType) +
+	theme_classic(base_size=18, base_family="myriad") +
+	theme(strip.background=element_rect(fill="grey95", linetype="blank")) +
+	labs(x="positive well count", title="IUPM = 20")
+ggsave(plotFileName, width=8, height=8, units="in", device="pdf")
+cat("\\includegraphics{", plotFileName, "}\n\n", sep="")
+plotFileName <- "positiveWellHist50.pdf"
+showtext_auto()
+ggplot(data=simData[IUPM=="50",], aes(x=count, ..density.., fill=simulation)) +
+	geom_histogram(bins=14, position="dodge") +
+	facet_grid(volume~wellType) +
+	theme_classic(base_size=18, base_family="myriad") +
+	theme(strip.background=element_rect(fill="grey95", linetype="blank")) +
+	labs(x="positive well count", title="IUPM = 50")
+ggsave(plotFileName, width=8, height=8, units="in", device="pdf")
+cat("\\includegraphics{", plotFileName, "}\n\n", sep="")
+@
+\end{center}
+
+
+\end{document}
+
+
+
