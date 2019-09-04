@@ -1,4 +1,4 @@
-This repository contains software for estimating cell counts from limited dilution assays.
+This repository contains software made available by [JanBiotech](https://janbiotech.com/) to estimate cell counts from limited dilution assays.
 
 Simulations
 -----------
