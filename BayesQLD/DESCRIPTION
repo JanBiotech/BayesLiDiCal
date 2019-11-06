@@ -1,0 +1,13 @@
+Package: BayesQLD
+Type: Package
+Title: Bayesian analyses of quantal limited dilution assays
+Version: 1.0
+Date: 2019-09-04
+Author: JanBiotech, Inc.
+Maintainer: Anthony Greenberg <info@bayesicresearch.org>
+Description: A Bayesian method to estimate the number of cells a particular type in a sample from quantal limited dilution assays. The read out consists of positive (if at least one cell of the desired type is present) or negative wells in a dilution series. The number of the focal cells is assumed small compared to the total pool in the samples.
+License: BSD_3_Clause
+Imports: Rcpp (>= 1.0.2)
+LinkingTo: Rcpp, Rdpack
+ByteCompile: yes
+OS_type: unix
