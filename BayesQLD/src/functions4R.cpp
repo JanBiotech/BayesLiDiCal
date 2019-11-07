@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 JanBiotech, Inc.
+ * Copyright (c) 2019 Anthony J. Greenberg
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -17,43 +17,36 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/// Model for dilution series
+
+///
 /** \file
  * \author Anthony J. Greenberg
- * \copyright Copyright (c) 2019 JanBiotech, Inc.
+ * \copyright Copyright (c) 2019 Anthony J. Greenberg
  * \version 1.0
  *
- *  Function implementation for estimating the number of positives from a quantal limited dilution assay.
  *
  */
 
 #include <vector>
+#include <string>
 #include <cmath>
+#include <algorithm>
+
+#include <Rcpp.h>
 
 #include "model.hpp"
-#include "random.hpp"
 
-using std::vector;
-using namespace BayesicSpace;
-
-
-// BayesQLD methods
-
-double BayesQLD::logPost_(const double &theta){
-	double lp = 0.0;
-
-	for (size_t i = 0; i < posWells_.size(); ++i) {
-		double lnIsum = 0.0;
-		for (double di = posWells_[i] + 1.0; di <= nWells_[i]; di += 1.0) {
-			lnIsum += log(di);
-		}
-		double lnKsum = 0.0;
-		for (double dk = 2.0; dk <= nWells_[i] - posWells_[i]; dk += 1.0) {
-			lnKsum += log(dk);
-		}
-		lp += lnIsum - lnKsum + posWells_[i]*log( 1.0 - exp(-dilution_[i]*theta) ) + (posWells_[i] - nWells_[i])*dilution_[i]*theta - lambda_*theta;
+//[[Rcpp::export]]
+double testLP(const std::vector<double> &nPos, const std::vector<double> &nWells, const std::vector<double> &dilFrac, const double &theta){
+	double res = 0.0;
+	try {
+		BayesicSpace::BayesQLD test(nPos, nWells, dilFrac);
+		res = test.lpost(theta);
+		return res;
+	} catch(std::string problem) {
+		Rcpp::stop(problem);
 	}
-
-	return lp;
+	return res;
 }
+
 

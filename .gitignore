@@ -1,6 +1,7 @@
 *.gz
 *.swp
-._ycm_*
+.ycm_*
 *.o
 *.so
+*.sh
 

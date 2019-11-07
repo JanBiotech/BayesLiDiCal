@@ -5,19 +5,23 @@
 
 using namespace Rcpp;
 
-// rcpp_hello_world
-List rcpp_hello_world();
-RcppExport SEXP _BayesQLD_rcpp_hello_world() {
+// testLP
+double testLP(const std::vector<double>& nPos, const std::vector<double>& nWells, const std::vector<double>& dilFrac, const double& theta);
+RcppExport SEXP _BayesQLD_testLP(SEXP nPosSEXP, SEXP nWellsSEXP, SEXP dilFracSEXP, SEXP thetaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type nPos(nPosSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type nWells(nWellsSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type dilFrac(dilFracSEXP);
+    Rcpp::traits::input_parameter< const double& >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(testLP(nPos, nWells, dilFrac, theta));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesQLD_rcpp_hello_world", (DL_FUNC) &_BayesQLD_rcpp_hello_world, 0},
+    {"_BayesQLD_testLP", (DL_FUNC) &_BayesQLD_testLP, 4},
     {NULL, NULL, 0}
 };
 

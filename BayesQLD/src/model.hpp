@@ -31,10 +31,12 @@
 #define model_hpp
 
 #include <vector>
+#include <string>
 
 #include "random.hpp"
 
 using std::vector;
+using std::string;
 
 namespace BayesicSpace {
 	/** \brief Dilution assay model class
@@ -44,15 +46,15 @@ namespace BayesicSpace {
 	class BayesQLD {
 	public:
 		/** \brief Default constructor */
-		BayesQLD() : theta_{0.0} {};
+		BayesQLD() : theta_{0.0}, lambda_{0.0001} {};
 		/** \brief Constructor
 		 *
 		 * \param[in] pWellN vector with positive well numbers
 		 * \param[in] totWellN vector with total well numbers
 		 * \param[in] dilutionFrac vector with dilutino fractions
-		 * 
+		 *
 		 */
-		BayesQLD(const vector<double> &pWellN, const vector<double> &totWellN, const vector<double> &dilutionFrac) : posWells_{pWellN}, nWells_{totWellN}, dilution_{dilutionFrac}, theta_{0.0} {};
+		BayesQLD(const vector<double> &pWellN, const vector<double> &totWellN, const vector<double> &dilutionFrac) : posWells_{pWellN}, nWells_{totWellN}, dilution_{dilutionFrac}, theta_{0.0}, lambda_{0.0001} { if( !( (pWellN.size() == totWellN.size()) && (totWellN.size() == dilutionFrac.size()) ) ) throw string("ERROR: all input vectors must be of the same size"); };
 
 		/** \brief Destructor */
 		~BayesQLD() {};
@@ -61,7 +63,7 @@ namespace BayesicSpace {
 		 *
 		 * \param[in] in the object to be copied
 		 */
-		BayesQLD(const BayesQLD &in) : posWells_{in.posWells_}, nWells_{in.nWells_}, dilution_{in.dilution_}, theta_{in.theta_}, accept_{in.accept_} {};
+		BayesQLD(const BayesQLD &in) : posWells_{in.posWells_}, nWells_{in.nWells_}, dilution_{in.dilution_}, theta_{in.theta_}, accept_{in.accept_}, lambda_{in.lambda_} {};
 		/** \brief Copy assignment operator
 		 *
 		 * \param[in] object to be assigned
@@ -72,7 +74,7 @@ namespace BayesicSpace {
 		 *
 		 * \param[in] in the object to be moved
 		 */
-		BayesQLD(BayesQLD &&in) : posWells_{move(in.posWells_)}, nWells_{move(in.nWells_)}, dilution_{move(in.dilution_)}, theta_{in.theta_}, accept_{move(in.accept_)} {};
+		BayesQLD(BayesQLD &&in) : posWells_{move(in.posWells_)}, nWells_{move(in.nWells_)}, dilution_{move(in.dilution_)}, theta_{in.theta_}, accept_{move(in.accept_)}, lambda_{in.lambda_} {};
 		/** \brief Move assignment operator
 		 *
 		 * \param[in] object to be assigned
@@ -85,7 +87,7 @@ namespace BayesicSpace {
 		 * \param[in] theta parameter value
 		 * \return log-posterior value
 		 */
-		double logPost(const double &theta) {return logPost_(theta); };
+		double lpost(const double &theta) {return logPost_(theta); };
 	private:
 		/** \brief Number of positive wells at each dilution */
 		vector<double> posWells_;
@@ -97,6 +99,11 @@ namespace BayesicSpace {
 		double theta_;
 		/** \brief Accept/reject tracking vector */
 		vector<uint16_t> accept_;
+		/** \brief Prior rate parameter
+		 *
+		 * Rate parameter of the exponetial prior.
+		 */
+		const double lambda_;
 		/** \brief Sampler from distributions */
 		RanDraw rng_;
 		/** \brief Log-posterior function
