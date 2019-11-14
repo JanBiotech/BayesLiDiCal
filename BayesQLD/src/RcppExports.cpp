@@ -6,22 +6,23 @@
 using namespace Rcpp;
 
 // testLP
-double testLP(const std::vector<double>& nPos, const std::vector<double>& nWells, const std::vector<double>& dilFrac, const double& theta);
-RcppExport SEXP _BayesQLD_testLP(SEXP nPosSEXP, SEXP nWellsSEXP, SEXP dilFracSEXP, SEXP thetaSEXP) {
+Rcpp::List testLP(const std::vector<double>& nPos, const std::vector<double>& nWells, const std::vector<double>& dilFrac, const int32_t& nBurnin, const int32_t& nSample);
+RcppExport SEXP _BayesQLD_testLP(SEXP nPosSEXP, SEXP nWellsSEXP, SEXP dilFracSEXP, SEXP nBurninSEXP, SEXP nSampleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::vector<double>& >::type nPos(nPosSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type nWells(nWellsSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type dilFrac(dilFracSEXP);
-    Rcpp::traits::input_parameter< const double& >::type theta(thetaSEXP);
-    rcpp_result_gen = Rcpp::wrap(testLP(nPos, nWells, dilFrac, theta));
+    Rcpp::traits::input_parameter< const int32_t& >::type nBurnin(nBurninSEXP);
+    Rcpp::traits::input_parameter< const int32_t& >::type nSample(nSampleSEXP);
+    rcpp_result_gen = Rcpp::wrap(testLP(nPos, nWells, dilFrac, nBurnin, nSample));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesQLD_testLP", (DL_FUNC) &_BayesQLD_testLP, 4},
+    {"_BayesQLD_testLP", (DL_FUNC) &_BayesQLD_testLP, 5},
     {NULL, NULL, 0}
 };
 

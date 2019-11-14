@@ -37,16 +37,25 @@
 #include "model.hpp"
 
 //[[Rcpp::export]]
-double testLP(const std::vector<double> &nPos, const std::vector<double> &nWells, const std::vector<double> &dilFrac, const double &theta){
-	double res = 0.0;
+Rcpp::List testLP(const std::vector<double> &nPos, const std::vector<double> &nWells, const std::vector<double> &dilFrac, const int32_t &nBurnin, const int32_t &nSample){
 	try {
-		BayesicSpace::BayesQLD test(nPos, nWells, dilFrac);
-		res = test.lpost(theta);
-		return res;
+		BayesicSpace::BayesQLD qld(nPos, nWells, dilFrac);
+		std::vector<double> iupm;
+		std::vector<uint32_t> accept;
+		if (nBurnin <= 0) {
+			Rcpp::stop("ERROR: number of burn-in steps must be positive");
+		}
+		if (nSample <= 0) {
+			Rcpp::stop("ERROR: number of sampling steps must be positive");
+		}
+		uint32_t Nb = static_cast<uint32_t>(nBurnin);
+		uint32_t Ns = static_cast<uint32_t>(nSample);
+		qld.sampler(Nb, Ns, iupm, accept);
+		return Rcpp::List::create(Rcpp::Named("iupm", iupm), Rcpp::Named("acceptance", accept));
 	} catch(std::string problem) {
 		Rcpp::stop(problem);
 	}
-	return res;
+	return Rcpp::List::create(Rcpp::Named("error", "NaN"));
 }
 
 
