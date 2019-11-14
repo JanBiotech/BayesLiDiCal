@@ -38,6 +38,25 @@ using namespace BayesicSpace;
 
 
 // BayesQLD methods
+BayesQLD::BayesQLD(const vector<double> &pWellN, const vector<double> &totWellN, const vector<double> &dilutionFrac) : posWells_{pWellN}, nWells_{totWellN}, dilution_{dilutionFrac}, lambda_{0.0001} {
+	if( !( (pWellN.size() == totWellN.size()) && (totWellN.size() == dilutionFrac.size()) ) ){
+		throw string("ERROR: all input vectors must be of the same size");
+	}
+	theta_ = exp(rng_.rnorm());
+};
+
+void BayesQLD::sampler(const uint32_t &Nburnin, const uint32_t &Nsamples, vector<double> &thetaSamp, vector<uint32_t> &accept){
+	thetaSamp.clear();
+	accept.clear();
+	for (uint32_t iBnin = 1; iBnin < Nburnin; ++iBnin) { // burn-in phase
+		accept.push_back( update_() );
+	}
+	for (uint32_t iSamp = 1; iSamp < Nsamples; ++iSamp) { // sampling phase
+		accept.push_back( update_() );
+		thetaSamp.push_back(theta_);
+	}
+
+}
 
 double BayesQLD::logPost_(const double &theta){
 	double lp = 0.0;
@@ -56,4 +75,19 @@ double BayesQLD::logPost_(const double &theta){
 
 	return lp;
 }
+
+uint32_t BayesQLD::update_(){
+	double lTheta      = log(theta_);
+	double lThetaPrime = lTheta + rng_.rnorm();                                                // proposing a move in log-space
+	double lAlpha      = logPost_(exp(lThetaPrime)) - logPost_(theta_) + lThetaPrime - lTheta; // MH criterion; the second subtraction accounts for non-symmetry
+	double lU          = log(rng_.runifnz());
+	if (lU < lAlpha) {
+		theta_ = exp(lThetaPrime);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+
 
