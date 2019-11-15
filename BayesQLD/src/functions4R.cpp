@@ -68,7 +68,7 @@ Rcpp::List runSampler(const std::vector<double> &nPos, const std::vector<double>
 		std::vector<double> iupm;
 		std::vector<uint32_t> accept;
 		std::vector<int32_t> chainID;
-		for (int32_t c = 1; c < nChains; ++c) {
+		for (int32_t c = 1; c <= nChains; ++c) {
 			BayesicSpace::BayesQLD qld(nPos, nWells, dilFrac);
 			qld.sampler(Nb, Ns, iupm, accept);
 			for (uint32_t i = 0; i < Ns; ++i) {

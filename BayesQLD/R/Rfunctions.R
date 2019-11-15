@@ -24,27 +24,88 @@
 #' @param data data frame with data
 #' @param well.state.colID name or number of the column containing well state data
 #' @param dilution.colID name or number of the column with dilution factors
-#' @param nBurnin number of burnin iterations (default is 1000, the recommended value)
+#' @param nBurnin number of burn-in iterations (default is 1000, the recommended value)
 #' @param nSampling number of sampling iterations per chain (default is 12500, the recommended value)
 #' @param nThin chain thinning value (default is 5, the recommended value)
 #' @param nChains number of chains (default is 4, the recommended value)
-#' @param interval the quantiles of the posterior to report (default is c(0.025, 0.25, 0.5, 0.75, 0.975))
-#' @return a list containing the highest-posterior density quantiles of IUPM estimates and MCMC convergence diagnositcs
+#' @param probability the probability of the outer HPD quantile to report (default is 0.95)
+#' @return a list containing the highest-posterior density quantiles (the outer, inter-quartile range, and mode) of IUPM estimates and MCMC convergence diagnostics
 #'
 #' @export
-estimateIUPM <- function(data, well.state.colID, dilution.colID, nBurnin=1000, nSampling=12500, nThin=5, nChains=4, interval=c(0.025, 0.25, 0.5, 0.75, 0.975)){
+estimateIUPM <- function(data, well.state.colID, dilution.colID, nBurnin=1000, nSampling=5000, nThin=2, nChains=4, probability=0.95){
 	if (is.na(sum(data[, well.state.colID]))) {
 		stop("No missing well state data allowed")
 	}
 	if (is.na(sum(data[, dilution.colID]))) {
 		stop("No missing dilution data allowed")
 	}
-	dil    <- unique(data[, dilution.colID])
-	dilFac <- as.factor(data[, dilution.colID], levels=as.character(dil))
-	pos    <- tapply(data[, well.state.colID], dilFac, sum)
-	tot    <- tapply(data[, well.state.colID], dilFac, length)
-	res    <- runSampler(as.double(pos), as.double(tot), as.double(dil), as.integer(nChains), as.integer(nBurnin), as.integer(nSampling))
+	dil     <- unique(data[, dilution.colID])
+	dilFac  <- factor(data[, dilution.colID], levels=as.character(dil))
+	pos     <- tapply(data[, well.state.colID], dilFac, sum)
+	tot     <- tapply(data[, well.state.colID], dilFac, length)
+	res     <- runSampler(as.double(pos), as.double(tot), as.double(dil), as.integer(nChains), as.integer(nBurnin), as.integer(nSampling))
+	thinVec <- ifelse(( (1:nSampling)%%nThin ) == 0, TRUE, FALSE)
+	iupmThn <- res$iupm[rep(thinVec, nChains)]
+	return(list(acceptance.rate=sum(res$acceptance)/length(res$acceptance),
+				iupm.HPD=HPDquantile(iupmThn, outr=probability)))
+}
 
-	accFrac <- sum(res$acceptance)/length(res$acceptance)
+#' Find posterior mode
+#'
+#' Finds the posterior mode from an MCMC sample. If there are more than one, picks one randomly with a warning.
+#'
+#' @param theta vector of MCMC samples of a variable
+#' @return value at the mode
+#'
+#' @export
+pmode <- function(theta){
+	dst <- density(theta, adjust = 2)
+	mxi <- which(dst$y == max(dst$y))
+	if(length(mxi) > 1){
+		warning("More than one mode in call to pmode(); picking randomly")
+		mxi <- sample(mxi, 1)
+	}
+	dst$x[mxi]
+}
+
+#' HPD interval
+#'
+#' Finds the highest-posterior density (HPD) interval for the given probability.
+#'
+#' @param theta vector of MCMC samples
+#' @param prob probability (defaults to 0.95)
+#' @return parameter values for the lower and upper bound of the HPD
+#'
+#' @export
+HPDint <- function(theta, prob = 0.95){
+	nsamp <- length(theta)
+	if (nsamp <= 2) stop("vector must have length > 2")
+
+	vals <- sort(theta)
+	gap  <- max(1, min(nsamp - 1, round(nsamp * prob)))
+	init <- 1:(nsamp - gap)
+	mInd <- which.min(vals[init + gap] - vals[init])
+	res  <- c(vals[mInd], vals[mInd + gap])
+	names(res) <- c("lower", "upper")
+	return(res)
+}
+
+#' Quantiles of the HPD
+#'
+#' Finds the mode, the inter-quartile range, and the outer range of the posterior distribution from an MCMC sample. The outer range must be > 0.5.
+#'
+#' @param theta vector of MCMC samples
+#' @param outr outer range (default is 0.95)
+#' @return the vector that has the outer range as the first and last elements, the inter-quartile range as the second and penultimate elements, and the mode as the middle element.
+HPDquantile <- function(theta, outr = 0.95){
+	if(outr <= 0.5) stop("Outer margin has to be >= 50%")
+	md    <- pmode(theta)
+	hpd95 <- HPDint(theta, outr)
+	hpd50 <- HPDint(theta, 0.5)
+	res   <- c(hpd95[1], hpd50[1], md, hpd50[2], hpd95[2])
+
+	outNm <- paste(c("lower", "upper"), outr*100, sep = "")
+	names(res) <- c(outNm[1], "lower50", "mode", "upper50", outNm[2])
+	return(res)
 }
 
