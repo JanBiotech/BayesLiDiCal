@@ -87,7 +87,7 @@ namespace BayesicSpace {
 
 		/** \brief Sampler
 		 *
-		 * The output vectors are erased before adding elements.
+		 * Runs the sampler. The output vectors are appended.
 		 *
 		 * \param[in] Nburnin number of burn-in iterations
 		 * \param[in] Nsamples number of sampling iterations

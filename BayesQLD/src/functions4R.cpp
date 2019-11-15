@@ -18,12 +18,13 @@
  */
 
 
-///
+/// R interface to the MCMC sampler
 /** \file
  * \author Anthony J. Greenberg
  * \copyright Copyright (c) 2019 Anthony J. Greenberg
  * \version 1.0
  *
+ * Contains the R interface to quantile limited dilution essay model fitting.
  *
  */
 
@@ -36,22 +37,45 @@
 
 #include "model.hpp"
 
+//' Run MCMC
+//'
+//' Fits a binomial model to well count data. Uses Metropolis-Hastings MCMC to generate samples from the posterior distribution of IUPM.
+//'
+//' @param nPos number of positive wells
+//' @param nWells total number of wells for each dilution
+//' @param dilFrac dilution fractions
+//' @param nChains number of chains
+//' @nBurnin number of burn-in iterations
+//' @nSample number of sampling iterations
+//'
+//' @return A list containing chains of IUPM values, a vector of chain IDs, and a vector of acceptance rates
+//'
+//' @export
 //[[Rcpp::export]]
-Rcpp::List testLP(const std::vector<double> &nPos, const std::vector<double> &nWells, const std::vector<double> &dilFrac, const int32_t &nBurnin, const int32_t &nSample){
+Rcpp::List runSampler(const std::vector<double> &nPos, const std::vector<double> &nWells, const std::vector<double> &dilFrac, const int32_t &nChains, const int32_t &nBurnin, const int32_t &nSample){
+	if (nBurnin <= 0) {
+		Rcpp::stop("ERROR: number of burn-in steps must be positive");
+	}
+	if (nSample <= 0) {
+		Rcpp::stop("ERROR: number of sampling steps must be positive");
+	}
+	if (nChains <= 0) {
+		Rcpp::stop("ERROR: number of chains must be positive");
+	}
+	uint32_t Nb = static_cast<uint32_t>(nBurnin);
+	uint32_t Ns = static_cast<uint32_t>(nSample);
 	try {
-		BayesicSpace::BayesQLD qld(nPos, nWells, dilFrac);
 		std::vector<double> iupm;
 		std::vector<uint32_t> accept;
-		if (nBurnin <= 0) {
-			Rcpp::stop("ERROR: number of burn-in steps must be positive");
+		std::vector<int32_t> chainID;
+		for (int32_t c = 1; c < nChains; ++c) {
+			BayesicSpace::BayesQLD qld(nPos, nWells, dilFrac);
+			qld.sampler(Nb, Ns, iupm, accept);
+			for (uint32_t i = 0; i < Ns; ++i) {
+				chainID.push_back(c);
+			}
 		}
-		if (nSample <= 0) {
-			Rcpp::stop("ERROR: number of sampling steps must be positive");
-		}
-		uint32_t Nb = static_cast<uint32_t>(nBurnin);
-		uint32_t Ns = static_cast<uint32_t>(nSample);
-		qld.sampler(Nb, Ns, iupm, accept);
-		return Rcpp::List::create(Rcpp::Named("iupm", iupm), Rcpp::Named("acceptance", accept));
+		return Rcpp::List::create(Rcpp::Named("iupm", iupm), Rcpp::Named("chainID", chainID), Rcpp::Named("acceptance", accept));
 	} catch(std::string problem) {
 		Rcpp::stop(problem);
 	}

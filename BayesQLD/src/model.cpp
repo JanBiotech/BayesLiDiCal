@@ -46,8 +46,6 @@ BayesQLD::BayesQLD(const vector<double> &pWellN, const vector<double> &totWellN,
 };
 
 void BayesQLD::sampler(const uint32_t &Nburnin, const uint32_t &Nsamples, vector<double> &thetaSamp, vector<uint32_t> &accept){
-	thetaSamp.clear();
-	accept.clear();
 	for (uint32_t iBnin = 1; iBnin <= Nburnin; ++iBnin) { // burn-in phase
 		accept.push_back( update_() );
 	}
@@ -77,9 +75,9 @@ double BayesQLD::logPost_(const double &theta){
 }
 
 uint32_t BayesQLD::update_(){
-	double sd          = 0.6; // proposal SD
+	double sd          = 0.6;                                                                  // proposal SD; calibrated to target 64% acceptance
 	double lTheta      = log(theta_);
-	double lThetaPrime = lTheta + sd*rng_.rnorm();                                                // proposing a move in log-space
+	double lThetaPrime = lTheta + sd*rng_.rnorm();                                             // proposing a move in log-space
 	double lAlpha      = logPost_(exp(lThetaPrime)) - logPost_(theta_) + lThetaPrime - lTheta; // MH criterion; the second subtraction accounts for non-symmetry
 	double lU          = log(rng_.runifnz());
 	if (lU < lAlpha) {
