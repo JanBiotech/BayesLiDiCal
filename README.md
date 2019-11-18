@@ -8,4 +8,7 @@ The _simulation_ folder contains the R code for simulating such assays and plott
 Quantal dilution assay analyses
 -------------------------
 
-Analysis software will be added as it is developed.
+The R package for Bayesian analyses of quantal dilution assays (such as QVOA) is in the BayesQLD directory of this repository. It depends only on [Rcpp](http://www.rcpp.org/). It can be installed directly from GitHub by running `install_github("tonymugen/BayesLiDiCal/BayesQLD")`, which requires the `devtools` package.
+
+`BayesQLD` is still in development, check back for newer versions.
+
