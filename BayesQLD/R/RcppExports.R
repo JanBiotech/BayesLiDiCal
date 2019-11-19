@@ -9,8 +9,8 @@
 #' @param nWells total number of wells for each dilution
 #' @param dilFrac dilution fractions
 #' @param nChains number of chains
-#' @nBurnin number of burn-in iterations
-#' @nSample number of sampling iterations
+#' @param nBurnin number of burn-in iterations
+#' @param nSample number of sampling iterations
 #'
 #' @return A list containing chains of IUPM values, a vector of chain IDs, and a vector of acceptance rates
 #'

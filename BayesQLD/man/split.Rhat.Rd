@@ -17,3 +17,6 @@ maximum of the folded and unfolded \eqn{\widehat{R}}
 \description{
 Calculates the rank-normalized split-\eqn{\widehat{R}} statistic on regular and folded MCMC samples. Reports the maximum of the two. Folded \eqn{\widehat{R}} captures problems in exploring distribution tails. Values of \eqn{\widehat{R} < 0.01} are considered acceptable.
 }
+\references{
+\insertRef{vehtari19a}{BayesQLD}
+}

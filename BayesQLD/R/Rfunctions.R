@@ -31,6 +31,8 @@
 #' @param probability the probability of the outer HPD quantile to report (default is 0.95)
 #' @return a list containing the highest-posterior density quantiles (the outer, inter-quartile range, and mode) of IUPM estimates and MCMC convergence diagnostics
 #'
+#' @references
+#' \insertRef{fazekas82a}{BayesQLD}
 #' @export
 estimateIUPM <- function(data, well.state.colID, dilution.colID, nBurnin=1000, nSampling=5000, nThin=2, nChains=4, probability=0.95){
 	if (is.na(sum(data[, well.state.colID]))) {
@@ -120,6 +122,8 @@ HPDquantile <- function(theta, outr = 0.95){
 #' @param chnFac factor marking chains
 #' @return maximum of the folded and unfolded \eqn{\widehat{R}}
 #'
+#' @references
+#' \insertRef{vehtari19a}{BayesQLD}
 #' @export
 split.Rhat <- function(theta, chnFac){
 	S       <- length(theta)

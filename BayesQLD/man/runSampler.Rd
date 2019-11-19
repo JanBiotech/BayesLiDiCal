@@ -14,6 +14,10 @@ runSampler(nPos, nWells, dilFrac, nChains, nBurnin, nSample)
 \item{dilFrac}{dilution fractions}
 
 \item{nChains}{number of chains}
+
+\item{nBurnin}{number of burn-in iterations}
+
+\item{nSample}{number of sampling iterations}
 }
 \value{
 A list containing chains of IUPM values, a vector of chain IDs, and a vector of acceptance rates

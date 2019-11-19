@@ -38,3 +38,6 @@ a list containing the highest-posterior density quantiles (the outer, inter-quar
 \description{
 Fits a Bayesian binomial model to data, estimating IUPM. The data should be in a data frame that contains at least two columns: (1) positive or negative status and (2) the dilution factor for each well. Positive wells must be 1, negative 0. Each row of the data frame is a well. The dilution factor is the fraction of the initial concentration. If the initial number of cells is 1 million, the result is IUPM. If the initial number is different, however, the reported values must be corrected by dividing the quantiles of the reported value by the initial number of cells.
 }
+\references{
+\insertRef{fazekas82a}{BayesQLD}
+}
