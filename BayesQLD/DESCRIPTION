@@ -11,3 +11,4 @@ Imports: Rcpp (>= 1.0.2)
 LinkingTo: Rcpp, Rdpack
 ByteCompile: yes
 OS_type: unix
+RoxygenNote: 7.0.0

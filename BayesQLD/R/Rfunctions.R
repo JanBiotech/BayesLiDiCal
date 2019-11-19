@@ -45,8 +45,9 @@ estimateIUPM <- function(data, well.state.colID, dilution.colID, nBurnin=1000, n
 	tot     <- tapply(data[, well.state.colID], dilFac, length)
 	res     <- runSampler(as.double(pos), as.double(tot), as.double(dil), as.integer(nChains), as.integer(nBurnin), as.integer(nSampling))
 	thinVec <- ifelse(( (1:nSampling)%%nThin ) == 0, TRUE, FALSE)
+	chnThn  <- factor(res$chainID[rep(thinVec, nChains)])
 	iupmThn <- res$iupm[rep(thinVec, nChains)]
-	return(list(acceptance.rate=sum(res$acceptance)/length(res$acceptance),
+	return(list(acceptance.rate=sum(res$acceptance)/length(res$acceptance), R.hat=split.Rhat(iupmThn, chnThn),
 				iupm.HPD=HPDquantile(iupmThn, outr=probability)))
 }
 
@@ -97,6 +98,8 @@ HPDint <- function(theta, prob = 0.95){
 #' @param theta vector of MCMC samples
 #' @param outr outer range (default is 0.95)
 #' @return the vector that has the outer range as the first and last elements, the inter-quartile range as the second and penultimate elements, and the mode as the middle element.
+#'
+#' @export
 HPDquantile <- function(theta, outr = 0.95){
 	if(outr <= 0.5) stop("Outer margin has to be >= 50%")
 	md    <- pmode(theta)
@@ -107,5 +110,44 @@ HPDquantile <- function(theta, outr = 0.95){
 	outNm <- paste(c("lower", "upper"), outr*100, sep = "")
 	names(res) <- c(outNm[1], "lower50", "mode", "upper50", outNm[2])
 	return(res)
+}
+
+#' Calculate rank-normalized \eqn{\widehat{R}}
+#'
+#' Calculates the rank-normalized split-\eqn{\widehat{R}} statistic on regular and folded MCMC samples. Reports the maximum of the two. Folded \eqn{\widehat{R}} captures problems in exploring distribution tails. Values of \eqn{\widehat{R} < 0.01} are considered acceptable.
+#'
+#' @param theta vector of MCMC samples
+#' @param chnFac factor marking chains
+#' @return maximum of the folded and unfolded \eqn{\widehat{R}}
+#'
+#' @export
+split.Rhat <- function(theta, chnFac){
+	S       <- length(theta)
+	rnk     <- rank(theta)
+	zetaRnk <- rank(abs(theta - median(theta)))
+	rn.z    <- qnorm((rnk - 0.5)/S)
+	rn.zeta <- qnorm((zetaRnk - 0.5)/S)
+
+	nlev    <- table(chnFac)
+	splitLv <- array(rbind(floor(nlev/2), ceiling(nlev/2)))
+	splitFc <- factor(paste(chnFac, rep(rep(1:2, nlevels(chnFac)), splitLv), sep=""))
+	M       <- nlevels(splitFc)
+	N       <- table(splitFc)
+
+	rn.z..    <- mean(rn.z)
+	rn.zeta.. <- mean(rn.zeta)
+	rn.z.m    <- tapply(rn.z, splitFc, mean)
+	rn.zeta.m <- tapply(rn.zeta, splitFc, mean)
+
+	B      <- sum((rn.z.m - rn.z..)^2*N)/(M-1)
+	B.zeta <- sum((rn.zeta.m - rn.zeta..)^2*N)/(M-1)
+	W      <- sum(tapply((rn.z - rn.z.m[splitFc])^2, splitFc, sum)/(N-1))/M
+	W.zeta <- sum(tapply((rn.zeta - rn.zeta.m[splitFc])^2, splitFc, sum)/(N-1))/M
+
+	Nfr       <- mean((N-1)/N)
+	N         <- mean(N)
+	Rhat.z    <- sqrt(Nfr + B/(W*N))
+	Rhat.zeta <- sqrt(Nfr + B.zeta/(W.zeta*N))
+	return(max(c(Rhat.z, Rhat.zeta)))
 }
 
